@@ -15,7 +15,7 @@ def _singleton(cls):
     return wrapper
 
 @_singleton
-class _CuFileDriver:
+class CuFileDriver:
     def __init__(self):
         cuFileDriverOpen()
     
@@ -31,7 +31,7 @@ class CuFile:
         """
         Initialize the CuFile instance.
         """
-        self._driver = _CuFileDriver()
+        self._driver = CuFileDriver()
         self._path = path
         self._mode = mode
         if mode == "r":
