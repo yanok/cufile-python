@@ -21,7 +21,18 @@ class CuFileDriver:
     
     def __del__(self):
         cuFileDriverClose()
-    
+
+def _os_mode(mode: str):
+    modes = {
+        "r": os.O_RDONLY,
+        "r+": os.O_RDWR,
+        "w": os.O_CREAT | os.O_WRONLY | os.O_TRUNC,
+        "w+": os.O_CREAT | os.O_RDWR | os.O_TRUNC,
+        "a": os.O_CREAT | os.O_WRONLY | os.O_APPEND,
+        "a+": os.O_CREAT | os.O_RDWR | os.O_APPEND,
+    }
+    return modes[mode] | os.O_DIRECT
+
 class CuFile:
     """
     Main class for CUDA file operations.
@@ -34,13 +45,7 @@ class CuFile:
         self._driver = CuFileDriver()
         self._path = path
         self._mode = mode
-        if mode == "r":
-            self._os_mode = os.O_RDONLY | os.O_DIRECT
-        elif mode == "w":
-            self._os_mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC | os.O_DIRECT
-        else:
-            assert mode == "rw"
-            self._os_mode = os.O_RDWR | os.O_DIRECT
+        self._os_mode = _os_mode(mode)
 
     def __enter__(self):
         """
