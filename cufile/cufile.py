@@ -31,14 +31,14 @@ def _os_mode(mode: str):
         "a": os.O_CREAT | os.O_WRONLY | os.O_APPEND,
         "a+": os.O_CREAT | os.O_RDWR | os.O_APPEND,
     }
-    return modes[mode] | os.O_DIRECT
+    return modes[mode]
 
 class CuFile:
     """
     Main class for CUDA file operations.
     """
     
-    def __init__(self, path: str, mode: str = "r"):
+    def __init__(self, path: str, mode: str = "r", use_direct_io: bool = False):
         """
         Initialize the CuFile instance.
         """
@@ -46,6 +46,8 @@ class CuFile:
         self._path = path
         self._mode = mode
         self._os_mode = _os_mode(mode)
+        if use_direct_io:
+            self._os_mode |= os.O_DIRECT
 
     def __enter__(self):
         """
