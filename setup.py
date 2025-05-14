@@ -14,7 +14,7 @@ setup(
     license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Operating System :: Linux",
+        "Operating System :: POSIX :: Linux",
     ],
     python_requires=">=3.6",
-) 
+)
