@@ -10,13 +10,20 @@ pip install cufile-python
 
 ## Usage
 
-```python
-from cufile import CUFILE
+Basic usage with the `CuFile` context manager:
 
-# Example usage
-cufile = CUFILE()
-# Add your usage examples here
+```python
+from cufile import CuFile
+import torch
+import ctypes
+
+# allocate an empty buffer in VRAM
+t = torch.empty((1024, 1024, 16), dtype=torch.float32, device="cuda")
+with CuFile("test.bin", "r") as f:
+    f.read(ctypes.c_void_p(t.data_ptr()), t.nbytes)
 ```
+
+Alternatively one could `import cufile.bindings` and use it as if calling libcufile from C++.
 
 ## Development
 
