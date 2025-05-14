@@ -75,3 +75,11 @@ class CuFile:
         Write to the file.
         """
         return cuFileWrite(self._cu_file_handle, src, size, file_offset, dev_offset)
+
+    def get_handle(self):
+        """
+        Get the file handle.
+        """
+        return self._handle
+    
+    
