@@ -4,7 +4,6 @@ Tests for the cufile module.
 
 import os
 import ctypes
-import pytest
 import time
 from cuda.bindings import driver as cuda
 from cufile import CuFile

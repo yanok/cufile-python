@@ -8,8 +8,7 @@ without requiring actual NVIDIA GPU hardware or the cuFile library.
 import os
 import ctypes
 import pytest
-import sys
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 # Mock the library loading before importing the cufile module
 mock_libcufile = MagicMock()
@@ -23,7 +22,7 @@ mock_libcufile.cuFileWrite.restype = ctypes.c_size_t
 
 with patch("ctypes.CDLL", return_value=mock_libcufile):
     from cufile import CuFile, CuFileDriver
-    from cufile.bindings import CUfileError, CUfileHandle_t, CUfileDescr, DescrUnion
+    from cufile.bindings import CUfileError, CUfileHandle_t
 
 # this is needed to avoid exceptions while the singleton driver object is
 # GCed at the program exit.
@@ -62,7 +61,6 @@ def reset_singleton():
     """Reset the CuFileDriver singleton between tests."""
     # The singleton decorator stores instances in a closure
     # We need to access and clear it
-    import cufile.cufile as cufile_module
 
     # Force garbage collection to clean up any lingering instances
     import gc
@@ -80,7 +78,7 @@ class TestCuFileDriver:
 
     def test_driver_initialization(self, mock_libcufile):
         """Test that CuFileDriver calls cuFileDriverOpen on initialization."""
-        driver = CuFileDriver()
+        CuFileDriver()
         mock_libcufile.cuFileDriverOpen.assert_called_once()
 
     def test_driver_singleton_pattern(self, mock_libcufile):
@@ -244,7 +242,7 @@ class TestCuFileContextManager:
     ):
         """Test that context manager closes file even on exception."""
         try:
-            with CuFile("/tmp/test.bin", "r") as cufile:
+            with CuFile("/tmp/test.bin", "r"):
                 raise ValueError("Test exception")
         except ValueError:
             pass
