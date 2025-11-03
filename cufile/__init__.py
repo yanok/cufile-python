@@ -6,4 +6,4 @@ __version__ = "0.1.0"
 
 from .cufile import CuFile, CuFileDriver
 
-__all__ = ["CuFile", "CuFileDriver"] 
+__all__ = ["CuFile", "CuFileDriver"]

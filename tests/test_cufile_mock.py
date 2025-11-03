@@ -21,7 +21,7 @@ mock_libcufile.cuFileBufDeregister.restype = None
 mock_libcufile.cuFileRead.restype = ctypes.c_size_t
 mock_libcufile.cuFileWrite.restype = ctypes.c_size_t
 
-with patch('ctypes.CDLL', return_value=mock_libcufile):
+with patch("ctypes.CDLL", return_value=mock_libcufile):
     from cufile import CuFile, CuFileDriver
     from cufile.bindings import CUfileError, CUfileHandle_t, CUfileDescr, DescrUnion
 
@@ -33,7 +33,7 @@ mock_libcufile.cuFileDriverClose.return_value = CUfileError(err=0, cu_err=0)
 @pytest.fixture
 def mock_libcufile():
     """Mock the libcufile library and its functions."""
-    with patch('cufile.bindings.libcufile') as mock_lib:
+    with patch("cufile.bindings.libcufile") as mock_lib:
         # Setup default successful return values
         mock_lib.cuFileDriverOpen.return_value = CUfileError(err=0, cu_err=0)
         mock_lib.cuFileDriverClose.return_value = CUfileError(err=0, cu_err=0)
@@ -50,9 +50,11 @@ def mock_libcufile():
 @pytest.fixture
 def mock_os_operations():
     """Mock os.open and os.close operations."""
-    with patch('cufile.cufile.os.open', return_value=42) as mock_open, \
-         patch('cufile.cufile.os.close') as mock_close:
-        yield {'open': mock_open, 'close': mock_close}
+    with (
+        patch("cufile.cufile.os.open", return_value=42) as mock_open,
+        patch("cufile.cufile.os.close") as mock_close,
+    ):
+        yield {"open": mock_open, "close": mock_close}
 
 
 @pytest.fixture(autouse=True)
@@ -64,6 +66,7 @@ def reset_singleton():
 
     # Force garbage collection to clean up any lingering instances
     import gc
+
     gc.collect()
 
     yield
@@ -93,7 +96,7 @@ class TestCuFileDriver:
         # The @_singleton decorator wraps the class, so we get an instance
         # when we call CuFileDriver(). We can verify that the instance has __del__
         driver = CuFileDriver()
-        assert hasattr(driver, '__del__')
+        assert hasattr(driver, "__del__")
 
         # Note: Testing __del__ directly is tricky because:
         # 1. It's called by garbage collector
@@ -113,10 +116,12 @@ class TestCuFileInitialization:
         assert cufile._cu_file_handle is None
         assert not cufile.is_open
 
-    def test_cufile_initialization_with_direct_io(self, mock_libcufile, mock_os_operations):
+    def test_cufile_initialization_with_direct_io(
+        self, mock_libcufile, mock_os_operations
+    ):
         """Test CuFile initialization with direct I/O flag."""
         # O_DIRECT is not available on macOS, skip this test if not available
-        if not hasattr(os, 'O_DIRECT'):
+        if not hasattr(os, "O_DIRECT"):
             pytest.skip("O_DIRECT not available on this platform")
 
         cufile = CuFile("/tmp/test.bin", "r", use_direct_io=True)
@@ -147,7 +152,7 @@ class TestCuFileOpenClose:
         cufile.open()
 
         # Verify os.open was called with correct arguments
-        mock_os_operations['open'].assert_called_once_with("/tmp/test.bin", os.O_RDONLY)
+        mock_os_operations["open"].assert_called_once_with("/tmp/test.bin", os.O_RDONLY)
 
         # Verify cuFileHandleRegister was called
         mock_libcufile.cuFileHandleRegister.assert_called_once()
@@ -163,7 +168,7 @@ class TestCuFileOpenClose:
         cufile.open()
 
         # Should only call os.open once
-        mock_os_operations['open'].assert_called_once()
+        mock_os_operations["open"].assert_called_once()
         mock_libcufile.cuFileHandleRegister.assert_called_once()
 
     def test_close_deregisters_handle(self, mock_libcufile, mock_os_operations):
@@ -176,7 +181,7 @@ class TestCuFileOpenClose:
         mock_libcufile.cuFileHandleDeregister.assert_called_once()
 
         # Verify os.close was called with correct fd
-        mock_os_operations['close'].assert_called_once_with(42)
+        mock_os_operations["close"].assert_called_once_with(42)
 
         # Verify the file is marked as closed
         assert not cufile.is_open
@@ -192,7 +197,7 @@ class TestCuFileOpenClose:
 
         # Should only call deregister and close once
         mock_libcufile.cuFileHandleDeregister.assert_called_once()
-        mock_os_operations['close'].assert_called_once()
+        mock_os_operations["close"].assert_called_once()
 
     def test_open_close_sequence(self, mock_libcufile, mock_os_operations):
         """Test complete open/close sequence."""
@@ -204,15 +209,14 @@ class TestCuFileOpenClose:
         # Open
         cufile.open()
         assert cufile.is_open
-        mock_os_operations['open'].assert_called_once_with(
-            "/tmp/test.bin",
-            os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+        mock_os_operations["open"].assert_called_once_with(
+            "/tmp/test.bin", os.O_CREAT | os.O_WRONLY | os.O_TRUNC
         )
 
         # Close
         cufile.close()
         assert not cufile.is_open
-        mock_os_operations['close'].assert_called_once_with(42)
+        mock_os_operations["close"].assert_called_once_with(42)
 
 
 class TestCuFileContextManager:
@@ -222,12 +226,12 @@ class TestCuFileContextManager:
         """Test that context manager properly opens and closes file."""
         with CuFile("/tmp/test.bin", "r") as cufile:
             assert cufile.is_open
-            mock_os_operations['open'].assert_called_once()
+            mock_os_operations["open"].assert_called_once()
             mock_libcufile.cuFileHandleRegister.assert_called_once()
 
         # After exiting context, file should be closed
         mock_libcufile.cuFileHandleDeregister.assert_called_once()
-        mock_os_operations['close'].assert_called_once()
+        mock_os_operations["close"].assert_called_once()
 
     def test_context_manager_returns_self(self, mock_libcufile, mock_os_operations):
         """Test that context manager returns the CuFile instance."""
@@ -235,7 +239,9 @@ class TestCuFileContextManager:
         with original as cufile:
             assert cufile is original
 
-    def test_context_manager_closes_on_exception(self, mock_libcufile, mock_os_operations):
+    def test_context_manager_closes_on_exception(
+        self, mock_libcufile, mock_os_operations
+    ):
         """Test that context manager closes file even on exception."""
         try:
             with CuFile("/tmp/test.bin", "r") as cufile:
@@ -245,7 +251,7 @@ class TestCuFileContextManager:
 
         # File should still be closed
         mock_libcufile.cuFileHandleDeregister.assert_called_once()
-        mock_os_operations['close'].assert_called_once()
+        mock_os_operations["close"].assert_called_once()
 
 
 class TestCuFileReadWrite:
@@ -362,7 +368,7 @@ class TestCuFileOperationSequence:
 
         # Open (should call os.open and cuFileHandleRegister)
         cufile.open()
-        mock_os_operations['open'].assert_called_once()
+        mock_os_operations["open"].assert_called_once()
         mock_libcufile.cuFileHandleRegister.assert_called_once()
 
         # Write (should call cuFileWrite)
@@ -374,7 +380,7 @@ class TestCuFileOperationSequence:
         # Close (should call cuFileHandleDeregister and os.close)
         cufile.close()
         mock_libcufile.cuFileHandleDeregister.assert_called_once()
-        mock_os_operations['close'].assert_called_once()
+        mock_os_operations["close"].assert_called_once()
 
     def test_complete_read_sequence(self, mock_libcufile, mock_os_operations):
         """Test a complete read operation sequence."""
@@ -395,13 +401,15 @@ class TestCuFileOperationSequence:
         cufile.close()
 
         # Verify order of operations
-        assert mock_os_operations['open'].call_count == 1
+        assert mock_os_operations["open"].call_count == 1
         assert mock_libcufile.cuFileHandleRegister.call_count == 1
         assert mock_libcufile.cuFileRead.call_count == 1
         assert mock_libcufile.cuFileHandleDeregister.call_count == 1
-        assert mock_os_operations['close'].call_count == 1
+        assert mock_os_operations["close"].call_count == 1
 
-    def test_write_read_sequence_with_context_manager(self, mock_libcufile, mock_os_operations):
+    def test_write_read_sequence_with_context_manager(
+        self, mock_libcufile, mock_os_operations
+    ):
         """Test write and read operations using context manager."""
         mock_libcufile.cuFileWrite.return_value = 4096
         mock_libcufile.cuFileRead.return_value = 4096
@@ -427,7 +435,10 @@ class TestCuFileOperationSequence:
         assert mock_libcufile.cuFileRead.call_count == 1
 
         # Both context managers should have closed
-        assert mock_libcufile.cuFileHandleDeregister.call_count == write_deregister_count + 1
+        assert (
+            mock_libcufile.cuFileHandleDeregister.call_count
+            == write_deregister_count + 1
+        )
 
 
 class TestCuFileErrorHandling:
@@ -446,11 +457,15 @@ class TestCuFileErrorHandling:
 
     def test_handle_register_failure(self, mock_libcufile, mock_os_operations):
         """Test handling of cuFileHandleRegister failure."""
-        mock_libcufile.cuFileHandleRegister.return_value = CUfileError(err=-2, cu_err=100)
+        mock_libcufile.cuFileHandleRegister.return_value = CUfileError(
+            err=-2, cu_err=100
+        )
 
         cufile = CuFile("/tmp/test.bin", "r")
 
-        with pytest.raises(RuntimeError, match="cuFileHandleRegister failed.*err=-2.*cuda_err=100"):
+        with pytest.raises(
+            RuntimeError, match="cuFileHandleRegister failed.*err=-2.*cuda_err=100"
+        ):
             cufile.open()
 
     def test_buffer_register_failure(self, mock_libcufile):
@@ -460,7 +475,9 @@ class TestCuFileErrorHandling:
         mock_libcufile.cuFileBufRegister.return_value = CUfileError(err=-3, cu_err=200)
 
         buf = ctypes.c_void_p(0x7000)
-        with pytest.raises(RuntimeError, match="cuFileBufRegister failed.*err=-3.*cuda_err=200"):
+        with pytest.raises(
+            RuntimeError, match="cuFileBufRegister failed.*err=-3.*cuda_err=200"
+        ):
             cuFileBufRegister(buf, 1024, 0)
 
     def test_multiple_operations_after_error(self, mock_libcufile, mock_os_operations):
@@ -542,7 +559,7 @@ class TestCuFileBindings:
         mock_libcufile.cuFileWrite.return_value = 65536
 
         handle = CUfileHandle_t(12345)
-        buf = ctypes.c_void_p(0xa000)
+        buf = ctypes.c_void_p(0xA000)
         result = cuFileWrite(handle, buf, 65536, 100, 200)
 
         assert result == 65536

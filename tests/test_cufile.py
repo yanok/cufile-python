@@ -16,7 +16,7 @@ CUDA_DEVICE = int(os.environ.get("TEST_CUFILE_CUDA_DEVICE", 0))
 
 file_path = os.path.join(WORK_DIR, "test.bin")
 
-err, = cuda.cuInit(0)
+(err,) = cuda.cuInit(0)
 assert err == 0, f"cuInit failed: {err}"
 err, device = cuda.cuDeviceGet(CUDA_DEVICE)
 assert err == 0, f"cuDeviceGet failed: {err}"
@@ -30,18 +30,21 @@ err, dptr_r = cuda.cuMemAlloc(BUF_SIZE)
 assert err == 0, f"cuMemAlloc failed: {err}"
 err, hptr = cuda.cuMemAllocHost(BUF_SIZE)
 assert err == 0, f"cuMemAllocHost failed: {err}"
-err, = cuda.cuMemsetD8(dptr_w, PATTERN_BYTE, BUF_SIZE)
+(err,) = cuda.cuMemsetD8(dptr_w, PATTERN_BYTE, BUF_SIZE)
 assert err == 0, f"cuMemsetD8 failed: {err}"
+
 
 def test_cufile_initialization():
     """Test that CuFile can be initialized."""
     cufile = CuFile(file_path, "w")
     assert isinstance(cufile, CuFile)
 
+
 def test_cufile_context_manager():
     """Test that CuFile works as a context manager."""
     with CuFile(file_path, "w") as cufile:
         assert isinstance(cufile, CuFile)
+
 
 def test_cufile_read_write_with_context_manager():
     """Test that CuFile can read and write to a file."""
@@ -52,8 +55,12 @@ def test_cufile_read_write_with_context_manager():
         write_time = time.perf_counter() - begin_write
         assert ret == BUF_SIZE
     dt = time.perf_counter() - begin
-    print(f"WRITE (w/o open/register) {ret/1024/1024:.2f}MB in {write_time*1e3:.2f}ms ({ret/write_time/1024/1024/1024:.2f}GB/s)")
-    print(f"FULL WRITE {ret/1024/1024:.2f}MB in {dt*1e3:.2f}ms ({ret/dt/1024/1024/1024:.2f}GB/s)")
+    print(
+        f"WRITE (w/o open/register) {ret / 1024 / 1024:.2f}MB in {write_time * 1e3:.2f}ms ({ret / write_time / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
+    print(
+        f"FULL WRITE {ret / 1024 / 1024:.2f}MB in {dt * 1e3:.2f}ms ({ret / dt / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
 
     begin = time.perf_counter()
     with CuFile(file_path, "r") as cufile:
@@ -62,14 +69,19 @@ def test_cufile_read_write_with_context_manager():
         read_time = time.perf_counter() - begin_read
         assert ret == BUF_SIZE
     dt = time.perf_counter() - begin
-    print(f"READ (w/o open/register) {ret/1024/1024:.2f}MB in {read_time*1e3:.2f}ms ({ret/read_time/1024/1024/1024:.2f}GB/s)")
-    print(f"FULL READ {ret/1024/1024:.2f}MB in {dt*1e3:.2f}ms ({ret/dt/1024/1024/1024:.2f}GB/s)")
+    print(
+        f"READ (w/o open/register) {ret / 1024 / 1024:.2f}MB in {read_time * 1e3:.2f}ms ({ret / read_time / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
+    print(
+        f"FULL READ {ret / 1024 / 1024:.2f}MB in {dt * 1e3:.2f}ms ({ret / dt / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
 
-    err, = cuda.cuMemcpyDtoH(hptr, dptr_r, BUF_SIZE)
+    (err,) = cuda.cuMemcpyDtoH(hptr, dptr_r, BUF_SIZE)
     assert err == 0, f"cuMemcpyDtoH failed: {err}"
     host_buf = (ctypes.c_ubyte * BUF_SIZE).from_address(hptr)
     for i in range(BUF_SIZE):
         assert host_buf[i] == PATTERN_BYTE
+
 
 def test_cufile_read_write():
     """Test that CuFile can read and write to a file."""
@@ -83,8 +95,12 @@ def test_cufile_read_write():
     assert ret == BUF_SIZE
     cufile.close()
     dt = time.perf_counter() - begin
-    print(f"WRITE (w/o open/register) {ret/1024/1024:.2f}MB in {write_time*1e3:.2f}ms ({ret/write_time/1024/1024/1024:.2f}GB/s)")
-    print(f"FULL WRITE {ret/1024/1024:.2f}MB in {dt*1e3:.2f}ms ({ret/dt/1024/1024/1024:.2f}GB/s)")
+    print(
+        f"WRITE (w/o open/register) {ret / 1024 / 1024:.2f}MB in {write_time * 1e3:.2f}ms ({ret / write_time / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
+    print(
+        f"FULL WRITE {ret / 1024 / 1024:.2f}MB in {dt * 1e3:.2f}ms ({ret / dt / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
 
     begin = time.perf_counter()
     cufile = CuFile(file_path, "r")
@@ -95,14 +111,19 @@ def test_cufile_read_write():
     assert ret == BUF_SIZE
     cufile.close()
     dt = time.perf_counter() - begin
-    print(f"READ (w/o open/register) {ret/1024/1024:.2f}MB in {read_time*1e3:.2f}ms ({ret/read_time/1024/1024/1024:.2f}GB/s)")
-    print(f"FULL READ {ret/1024/1024:.2f}MB in {dt*1e3:.2f}ms ({ret/dt/1024/1024/1024:.2f}GB/s)")
+    print(
+        f"READ (w/o open/register) {ret / 1024 / 1024:.2f}MB in {read_time * 1e3:.2f}ms ({ret / read_time / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
+    print(
+        f"FULL READ {ret / 1024 / 1024:.2f}MB in {dt * 1e3:.2f}ms ({ret / dt / 1024 / 1024 / 1024:.2f}GB/s)"
+    )
 
-    err, = cuda.cuMemcpyDtoH(hptr, dptr_r, BUF_SIZE)
+    (err,) = cuda.cuMemcpyDtoH(hptr, dptr_r, BUF_SIZE)
     assert err == 0, f"cuMemcpyDtoH failed: {err}"
     host_buf = (ctypes.c_ubyte * BUF_SIZE).from_address(hptr)
     for i in range(BUF_SIZE):
         assert host_buf[i] == PATTERN_BYTE
+
 
 def test_read_write_without_open():
     cufile = CuFile(file_path, "r")

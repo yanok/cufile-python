@@ -6,21 +6,26 @@ import os
 import ctypes
 from .bindings import *
 
+
 def _singleton(cls):
     _instances = {}
+
     def wrapper(*args, **kwargs):
         if cls not in _instances:
             _instances[cls] = cls(*args, **kwargs)
         return _instances[cls]
+
     return wrapper
+
 
 @_singleton
 class CuFileDriver:
     def __init__(self):
         cuFileDriverOpen()
-    
+
     def __del__(self):
         cuFileDriverClose()
+
 
 def _os_mode(mode: str):
     modes = {
@@ -33,11 +38,12 @@ def _os_mode(mode: str):
     }
     return modes[mode]
 
+
 class CuFile:
     """
     Main class for CUDA file operations.
     """
-    
+
     def __init__(self, path: str, mode: str = "r", use_direct_io: bool = False):
         """
         Initialize the CuFile instance.
@@ -87,14 +93,22 @@ class CuFile:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.close()
-    
-    def read(self, dest: ctypes.c_void_p, size: int, file_offset: int = 0, dev_offset: int = 0):
+
+    def read(
+        self,
+        dest: ctypes.c_void_p,
+        size: int,
+        file_offset: int = 0,
+        dev_offset: int = 0,
+    ):
         """Read from the file."""
         if not self.is_open:
             raise IOError("File is not open.")
         return cuFileRead(self._cu_file_handle, dest, size, file_offset, dev_offset)
-    
-    def write(self, src: ctypes.c_void_p, size: int, file_offset: int = 0, dev_offset: int = 0):
+
+    def write(
+        self, src: ctypes.c_void_p, size: int, file_offset: int = 0, dev_offset: int = 0
+    ):
         """Write to the file."""
         if not self.is_open:
             raise IOError("File is not open.")
@@ -103,5 +117,3 @@ class CuFile:
     def get_handle(self):
         """Get the file handle."""
         return self._handle
-    
- 
